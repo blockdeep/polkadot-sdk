@@ -746,7 +746,7 @@ pub mod pallet {
 	/// upper bound eras. This is used to determine the maximum amount of stake that
 	/// can be unbonded for a period potentially lower than upper bound eras.
 	#[pallet::storage]
-	pub(crate) type EraLowestRatioTotalStake<T: Config> =
+	pub type EraLowestRatioTotalStake<T: Config> =
 		StorageValue<_, BoundedVec<BalanceOf<T>, T::BondingDuration>, ValueQuery>;
 
 	/// Parameters for the unbonding queue mechanism.
