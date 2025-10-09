@@ -50,6 +50,7 @@ use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
 use parachain_inherent::{
 	deconstruct_parachain_inherent_data, AbridgedInboundDownwardMessages,
 	AbridgedInboundHrmpMessages, BasicParachainInherentData, InboundMessageId, InboundMessagesData,
+	InboundPublishedData,
 };
 use polkadot_parachain_primitives::primitives::RelayChainBlockNumber;
 use polkadot_runtime_parachains::{FeeTracker, GetMinFeeFactor};
@@ -567,6 +568,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			data: BasicParachainInherentData,
 			inbound_messages_data: InboundMessagesData,
+			published_data: InboundPublishedData,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 			assert!(
@@ -692,6 +694,9 @@ pub mod pallet {
 			<RelayStateProof<T>>::put(relay_chain_state);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
 			<HostConfiguration<T>>::put(host_config);
+
+			// Store published data from the broadcaster pallet.
+			Self::store_published_data(&published_data.data);
 
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
@@ -941,6 +946,19 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type CustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
+	/// Published data from parachains available through the broadcaster pallet.
+	/// Double map: Publisher ParaId -> Key -> Value
+	#[pallet::storage]
+	pub type PublishedData<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		ParaId,           // Publisher
+		Blake2_128Concat,
+		Vec<u8>,          // Key
+		Vec<u8>,          // Value
+		OptionQuery,
+	>;
+
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -1106,7 +1124,7 @@ impl<T: Config> Pallet<T> {
 	/// This method doesn't check for mqc heads mismatch. If the MQC doesn't match after
 	/// dropping messages, the runtime will panic when executing the inherent.
 	fn do_create_inherent(data: ParachainInherentData) -> Call<T> {
-		let (data, mut downward_messages, mut horizontal_messages) =
+		let (data, mut downward_messages, mut horizontal_messages, published_data) =
 			deconstruct_parachain_inherent_data(data);
 		let last_relay_block_number = LastRelayChainBlockNumber::<T>::get();
 
@@ -1128,7 +1146,7 @@ impl<T: Config> Pallet<T> {
 		let inbound_messages_data =
 			InboundMessagesData::new(downward_messages, horizontal_messages);
 
-		Call::set_validation_data { data, inbound_messages_data }
+		Call::set_validation_data { data, inbound_messages_data, published_data }
 	}
 
 	/// Enqueue all inbound downward messages relayed by the collator into the MQ pallet.
@@ -1669,6 +1687,21 @@ impl<T: Config> Pallet<T> {
 	/// chain.
 	pub fn last_relay_block_number() -> RelayChainBlockNumber {
 		LastRelayChainBlockNumber::<T>::get()
+	}
+
+	/// Store all published data from parachains.
+	///
+	/// Clears existing data and stores all new published data without filtering.
+	fn store_published_data(published_data: &BTreeMap<ParaId, Vec<(Vec<u8>, Vec<u8>)>>) {
+		// Clear all existing published data
+		let _ = PublishedData::<T>::clear(u32::MAX, None);
+
+		// Store all new published data
+		for (publisher, data_entries) in published_data {
+			for (key, value) in data_entries {
+				PublishedData::<T>::insert(publisher, key, value);
+			}
+		}
 	}
 }
 
