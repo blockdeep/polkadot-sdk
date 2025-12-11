@@ -309,7 +309,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type ConsensusHook = ConsensusHook;
 	type RelayParentOffset = ConstU32<0>;
-	type ChildTrieProcessor = ();
+	type ChildTrieProcessor = Subscriber;
+}
+
+impl cumulus_pallet_pubsub_consumer::Config for Runtime {}
+
+impl cumulus_pallet_subscriber::Config for Runtime {
+	type SubscriptionHandler = cumulus_pallet_pubsub_consumer::TestSubscriptionHandler<Runtime>;
+	type WeightInfo = ();
 }
 
 impl parachain_info::Config for Runtime {}
@@ -636,6 +643,8 @@ construct_runtime! {
 
 		ParachainSystem: cumulus_pallet_parachain_system = 20,
 		ParachainInfo: parachain_info = 21,
+		Subscriber: cumulus_pallet_subscriber = 22,
+		PubsubConsumer: cumulus_pallet_pubsub_consumer = 23,
 
 		Balances: pallet_balances = 30,
 		Assets: pallet_assets = 31,
@@ -886,6 +895,12 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::GetParachainInfo<Block> for Runtime {
 		fn parachain_id() -> ParaId {
 			ParachainInfo::parachain_id()
+		}
+	}
+
+	impl cumulus_primitives_core::KeyToIncludeInRelayProofApi<Block> for Runtime {
+		fn keys_to_prove() -> cumulus_primitives_core::RelayProofRequest {
+			Subscriber::get_relay_proof_requests()
 		}
 	}
 }

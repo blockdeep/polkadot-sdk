@@ -4743,6 +4743,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-pubsub-consumer"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-subscriber",
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std 14.0.0",
+]
+
+[[package]]
 name = "cumulus-pallet-session-benchmarking"
 version = "9.0.0"
 dependencies = [
@@ -19078,6 +19091,8 @@ version = "0.6.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-pubsub-consumer",
+ "cumulus-pallet-subscriber",
  "cumulus-pallet-weight-reclaim",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
