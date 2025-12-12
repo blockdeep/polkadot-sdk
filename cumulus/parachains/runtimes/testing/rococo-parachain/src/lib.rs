@@ -314,9 +314,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl cumulus_pallet_pubsub_consumer::Config for Runtime {}
 
+parameter_types! {
+	pub const PubsubChildTriePrefix: &'static [u8] = b"pubsub";
+}
+
 impl cumulus_pallet_subscriber::Config for Runtime {
 	type SubscriptionHandler = cumulus_pallet_pubsub_consumer::TestSubscriptionHandler<Runtime>;
 	type WeightInfo = ();
+	type ChildTriePrefix = PubsubChildTriePrefix;
 }
 
 impl parachain_info::Config for Runtime {}
