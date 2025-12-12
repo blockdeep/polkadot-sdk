@@ -314,9 +314,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl cumulus_pallet_pubsub_consumer::Config for Runtime {}
 
+parameter_types! {
+	pub const MaxPublishers: u32 = 100;
+}
+
 impl cumulus_pallet_subscriber::Config for Runtime {
 	type SubscriptionHandler = cumulus_pallet_pubsub_consumer::TestSubscriptionHandler<Runtime>;
 	type WeightInfo = ();
+	type MaxPublishers = MaxPublishers;
 }
 
 impl parachain_info::Config for Runtime {}
