@@ -309,7 +309,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type ConsensusHook = ConsensusHook;
 	type RelayParentOffset = ConstU32<0>;
-	type ChildTrieProcessor = Subscriber;
+	type RelayProofKeysProcessor = Subscriber;
 }
 
 impl cumulus_pallet_pubsub_consumer::Config for Runtime {}
