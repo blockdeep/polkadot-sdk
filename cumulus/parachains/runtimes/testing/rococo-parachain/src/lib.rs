@@ -320,7 +320,7 @@ parameter_types! {
 
 impl cumulus_pallet_subscriber::Config for Runtime {
 	type SubscriptionHandler = cumulus_pallet_pubsub_consumer::TestSubscriptionHandler<Runtime>;
-	type WeightInfo = ();
+	type WeightInfo = cumulus_pallet_subscriber::SubstrateWeight<Runtime>;
 	type MaxPublishers = MaxPublishers;
 }
 
