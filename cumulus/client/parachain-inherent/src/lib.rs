@@ -159,14 +159,14 @@ async fn collect_relay_storage_proof(
 		.ok()
 }
 
-/// Collect storage proofs for relay chain data.
+/// Collect additional storage proofs requested by the runtime.
 ///
 /// Generates proofs for both top-level relay chain storage and child trie data.
 /// Top-level keys are proven directly. Child trie roots are automatically included
 /// from their standard storage locations (`:child_storage:default:` + identifier).
 ///
 /// Returns a merged proof combining all requested data, or `None` if there are no requests.
-async fn collect_relay_storage_proofs(
+async fn collect_additional_storage_proofs(
 	relay_chain_interface: &impl RelayChainInterface,
 	relay_parent: PHash,
 	relay_proof_request: cumulus_primitives_core::RelayProofRequest,
@@ -284,7 +284,7 @@ impl ParachainInherentDataProvider {
 
 		// Collect additional requested storage proofs (top-level and child tries)
 		if let Some(additional_proofs) =
-			collect_relay_storage_proofs(relay_chain_interface, relay_parent, relay_proof_request)
+			collect_additional_storage_proofs(relay_chain_interface, relay_parent, relay_proof_request)
 				.await
 		{
 			relay_chain_state = StorageProof::merge([relay_chain_state, additional_proofs]);
