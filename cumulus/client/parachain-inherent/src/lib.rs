@@ -179,10 +179,8 @@ async fn collect_relay_storage_proofs(
 		return None;
 	}
 
-	let mut combined_proof: Option<StorageProof> = None;
-
 	// Group keys by storage type
-	let mut top_keys = Vec::new();
+	let mut top_keys = Vec::with_capacity(keys.len());
 	let mut child_keys: std::collections::BTreeMap<Vec<u8>, Vec<Vec<u8>>> =
 		std::collections::BTreeMap::new();
 
@@ -195,11 +193,14 @@ async fn collect_relay_storage_proofs(
 		}
 	}
 
+	// Collect all storage proofs
+	let mut all_proofs = Vec::new();
+
 	// Collect top-level storage proofs
 	if !top_keys.is_empty() {
 		match relay_chain_interface.prove_read(relay_parent, &top_keys).await {
 			Ok(top_proof) => {
-				combined_proof = Some(top_proof);
+				all_proofs.push(top_proof);
 			},
 			Err(e) => {
 				tracing::error!(
@@ -217,10 +218,7 @@ async fn collect_relay_storage_proofs(
 		let child_info = ChildInfo::new_default(&storage_key);
 		match relay_chain_interface.prove_child_read(relay_parent, &child_info, &data_keys).await {
 			Ok(child_proof) => {
-				combined_proof = match combined_proof {
-					None => Some(child_proof),
-					Some(existing) => Some(StorageProof::merge([existing, child_proof])),
-				};
+				all_proofs.push(child_proof);
 			},
 			Err(e) => {
 				tracing::error!(
@@ -234,7 +232,12 @@ async fn collect_relay_storage_proofs(
 		}
 	}
 
-	combined_proof
+	// Merge all proofs
+	if all_proofs.is_empty() {
+		None
+	} else {
+		Some(StorageProof::merge(all_proofs))
+	}
 }
 
 pub struct ParachainInherentDataProvider;
