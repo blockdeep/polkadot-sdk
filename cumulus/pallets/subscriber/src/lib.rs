@@ -26,8 +26,8 @@ extern crate alloc;
 
 use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 use codec::Decode;
-use cumulus_pallet_parachain_system::relay_state_snapshot::{
-	ProcessRelayProofKeys, RelayChainStateProof,
+use cumulus_pallet_parachain_system::{
+	relay_state_snapshot::RelayChainStateProof, OnSystemEvent,
 };
 use cumulus_primitives_core::ParaId;
 use frame_support::{
@@ -280,23 +280,36 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> ProcessRelayProofKeys for Pallet<T> {
+	impl<T: Config> OnSystemEvent for Pallet<T> {
+		fn on_validation_data(_data: &cumulus_primitives_core::PersistedValidationData) {
+			// No action needed for validation data events.
+		}
+
+		fn on_validation_code_applied() {
+			// No action needed for validation code applied events.
+		}
+
 		/// Process child trie data from the relay proof.
 		///
-		/// Note: This implementation only processes child trie keys (pubsub data).
+		/// This implementation only processes child trie keys (pubsub data).
 		/// Main trie keys in the proof are intentionally ignored.
-		fn process_relay_proof_keys(verified_proof: &RelayChainStateProof) -> Weight {
+		fn on_relay_state_proof(relay_state_proof: &RelayChainStateProof) -> Weight {
 			let (subscriptions, subscriptions_weight) = T::SubscriptionHandler::subscriptions();
 			let num_publishers = subscriptions.len() as u32;
 			let total_keys = subscriptions.iter().map(|(_, keys)| keys.len() as u32).sum();
 
-			let current_roots = Self::collect_publisher_roots(verified_proof, &subscriptions);
-			let (handler_weight, total_bytes_decoded) = Self::process_published_data(verified_proof, &current_roots, &subscriptions);
+			let current_roots = Self::collect_publisher_roots(relay_state_proof, &subscriptions);
+			let (handler_weight, total_bytes_decoded) =
+				Self::process_published_data(relay_state_proof, &current_roots, &subscriptions);
 
 			// Return total weight for all operations
-			subscriptions_weight
-				.saturating_add(handler_weight)
-				.saturating_add(T::WeightInfo::process_proof_excluding_handler(num_publishers, total_keys, total_bytes_decoded))
+			subscriptions_weight.saturating_add(handler_weight).saturating_add(
+				T::WeightInfo::process_proof_excluding_handler(
+					num_publishers,
+					total_keys,
+					total_bytes_decoded,
+				),
+			)
 		}
 	}
 }

@@ -299,7 +299,7 @@ type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
-	type OnSystemEvent = ();
+	type OnSystemEvent = Subscriber;
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type DmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
@@ -309,7 +309,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type ConsensusHook = ConsensusHook;
 	type RelayParentOffset = ConstU32<0>;
-	type RelayProofKeysProcessor = Subscriber;
 }
 
 impl cumulus_pallet_pubsub_consumer::Config for Runtime {}
