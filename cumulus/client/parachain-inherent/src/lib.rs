@@ -228,85 +228,6 @@ async fn collect_relay_storage_proof(
 	Some(StorageProof::merge(all_proofs))
 }
 
-/// Collect additional storage proofs requested by the runtime.
-///
-/// Generates proofs for both top-level relay chain storage and child trie data.
-/// Top-level keys are proven directly. Child trie roots are automatically included
-/// from their standard storage locations (`:child_storage:default:` + identifier).
-///
-/// Returns a merged proof combining all requested data, or `None` if there are no requests.
-async fn collect_additional_storage_proofs(
-	relay_chain_interface: &impl RelayChainInterface,
-	relay_parent: PHash,
-	relay_proof_request: RelayProofRequest,
-) -> Option<StorageProof> {
-	let RelayProofRequest { keys } = relay_proof_request;
-
-	if keys.is_empty() {
-		return None;
-	}
-
-	// Group keys by storage type
-	let mut top_keys = Vec::new();
-	let mut child_keys: std::collections::BTreeMap<Vec<u8>, Vec<Vec<u8>>> =
-		std::collections::BTreeMap::new();
-
-	for key in keys {
-		match key {
-			RelayStorageKey::Top(k) => top_keys.push(k),
-			RelayStorageKey::Child { storage_key, key } => {
-				child_keys.entry(storage_key).or_default().push(key);
-			},
-		}
-	}
-
-	// Collect all storage proofs
-	let mut all_proofs = Vec::new();
-
-	// Collect top-level storage proofs
-	if !top_keys.is_empty() {
-		match relay_chain_interface.prove_read(relay_parent, &top_keys).await {
-			Ok(top_proof) => {
-				all_proofs.push(top_proof);
-			},
-			Err(e) => {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?relay_parent,
-					error = ?e,
-					"Cannot obtain top-level storage proof from relay chain.",
-				);
-			},
-		}
-	}
-
-	// Collect child trie proofs
-	for (storage_key, data_keys) in child_keys {
-		let child_info = ChildInfo::new_default(&storage_key);
-		match relay_chain_interface.prove_child_read(relay_parent, &child_info, &data_keys).await {
-			Ok(child_proof) => {
-				all_proofs.push(child_proof);
-			},
-			Err(e) => {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?relay_parent,
-					child_trie_id = ?child_info.storage_key(),
-					error = ?e,
-					"Cannot obtain child trie proof from relay chain.",
-				);
-			},
-		}
-	}
-
-	// Merge all proofs
-	if all_proofs.is_empty() {
-		None
-	} else {
-		Some(StorageProof::merge(all_proofs))
-	}
-}
-
 pub struct ParachainInherentDataProvider;
 
 impl ParachainInherentDataProvider {
@@ -339,7 +260,7 @@ impl ParachainInherentDataProvider {
 			.iter()
 			.skip(1)
 			.any(sc_consensus_babe::contains_epoch_change::<RelayBlock>);
-		let mut relay_chain_state = collect_relay_storage_proof(
+		let relay_chain_state = collect_relay_storage_proof(
 			relay_chain_interface,
 			para_id,
 			relay_parent,
@@ -349,14 +270,6 @@ impl ParachainInherentDataProvider {
 			relay_proof_request,
 		)
 		.await?;
-
-		// Collect additional requested storage proofs (top-level and child tries)
-		if let Some(additional_proofs) =
-			collect_additional_storage_proofs(relay_chain_interface, relay_parent, relay_proof_request)
-				.await
-		{
-			relay_chain_state = StorageProof::merge([relay_chain_state, additional_proofs]);
-		}
 
 		let downward_messages = relay_chain_interface
 			.retrieve_dmq_contents(para_id, relay_parent)
