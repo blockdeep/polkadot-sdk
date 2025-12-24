@@ -15,6 +15,9 @@ workspace = true
 codec = { features = ["derive"], workspace = true }
 
 # Substrate
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-keyring = { workspace = true }
 sp-runtime = { workspace = true }
 sp-state-machine = { workspace = true }
 sp-trie = { workspace = true }
@@ -31,6 +34,9 @@ std = [
 	"codec/std",
 	"cumulus-primitives-core/std",
 	"polkadot-primitives/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-keyring/std",
 	"sp-runtime/std",
 	"sp-state-machine/std",
 	"sp-trie/std",
