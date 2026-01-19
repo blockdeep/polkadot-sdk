@@ -155,10 +155,16 @@ impl<T: Config> cumulus_pallet_parachain_system::OnSystemEvent for Pallet<T> {
 		let alice_key = crate::test_pallet::relay_alice_account_key();
 
 		// Verify that Alice's account is included in the relay proof.
-		relay_state_proof
+		let alice_account = relay_state_proof
 			.read_optional_entry::<AccountInfo<u32, AccountData<u128>>>(&alice_key)
 			.expect("Invalid relay chain state proof")
 			.expect("Alice's account must be present in the relay proof");
+
+		log::info!(
+			target: "test_pallet",
+			"✅ Relay proof validated! Alice's account found with free balance: {}",
+			alice_account.data.free
+		);
 
 		frame_support::weights::Weight::zero()
 	}

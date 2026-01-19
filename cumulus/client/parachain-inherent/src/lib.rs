@@ -148,7 +148,6 @@ async fn collect_relay_storage_proof(
 	relay_parent: PHash,
 	include_authorities: bool,
 	include_next_authorities: bool,
-	additional_relay_state_keys: Vec<Vec<u8>>,
 	relay_proof_request: cumulus_primitives_core::RelayProofRequest,
 ) -> Option<StorageProof> {
 	use cumulus_primitives_core::RelayStorageKey;
@@ -162,13 +161,6 @@ async fn collect_relay_storage_proof(
 		include_next_authorities,
 	)
 	.await?;
-
-	// Add additional_relay_state_keys
-	let unique_keys: Vec<Vec<u8>> = additional_relay_state_keys
-		.into_iter()
-		.filter(|key| !all_top_keys.contains(key))
-		.collect();
-	all_top_keys.extend(unique_keys);
 
 	// Group requested keys by storage type
 	let cumulus_primitives_core::RelayProofRequest { keys } = relay_proof_request;
@@ -244,7 +236,6 @@ impl ParachainInherentDataProvider {
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 		relay_parent_descendants: Vec<RelayHeader>,
-		additional_relay_state_keys: Vec<Vec<u8>>,
 		relay_proof_request: cumulus_primitives_core::RelayProofRequest,
 		collator_peer_id: PeerId,
 	) -> Option<ParachainInherentData> {
@@ -270,7 +261,6 @@ impl ParachainInherentDataProvider {
 			relay_parent,
 			!relay_parent_descendants.is_empty(),
 			include_next_authorities,
-			additional_relay_state_keys,
 			relay_proof_request,
 		)
 		.await?;

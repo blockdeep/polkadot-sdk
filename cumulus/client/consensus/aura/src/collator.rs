@@ -180,6 +180,22 @@ where
 		relay_proof_request: cumulus_primitives_core::RelayProofRequest,
 		collator_peer_id: PeerId,
 	) -> Result<(ParachainInherentData, InherentData), Box<dyn Error + Send + Sync + 'static>> {
+		// Additional relay state keys
+		let additional_relay_state_keys: Vec<Vec<u8>> = Vec::new();
+
+		// Merge node-side keys with runtime-requested keys
+		let merged_relay_proof_request = cumulus_primitives_core::RelayProofRequest {
+			keys: relay_proof_request
+				.keys
+				.into_iter()
+				.chain(
+					additional_relay_state_keys
+						.into_iter()
+						.map(cumulus_primitives_core::RelayStorageKey::Top),
+				)
+				.collect(),
+		};
+
 		let paras_inherent_data = ParachainInherentDataProvider::create_at(
 			relay_parent,
 			&self.relay_client,
@@ -188,8 +204,7 @@ where
 			relay_parent_descendants
 				.map(RelayParentData::into_inherent_descendant_list)
 				.unwrap_or_default(),
-			Vec::new(),
-			relay_proof_request,
+			merged_relay_proof_request,
 			collator_peer_id,
 		)
 		.await;
