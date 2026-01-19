@@ -184,17 +184,12 @@ where
 		let additional_relay_state_keys: Vec<Vec<u8>> = Vec::new();
 
 		// Merge node-side keys with runtime-requested keys
-		let merged_relay_proof_request = cumulus_primitives_core::RelayProofRequest {
-			keys: relay_proof_request
-				.keys
+		let mut merged_relay_proof_request = relay_proof_request;
+		merged_relay_proof_request.keys.extend(
+			additional_relay_state_keys
 				.into_iter()
-				.chain(
-					additional_relay_state_keys
-						.into_iter()
-						.map(cumulus_primitives_core::RelayStorageKey::Top),
-				)
-				.collect(),
-		};
+				.map(cumulus_primitives_core::RelayStorageKey::Top),
+		);
 
 		let paras_inherent_data = ParachainInherentDataProvider::create_at(
 			relay_parent,
