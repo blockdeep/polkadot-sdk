@@ -211,7 +211,8 @@ impl RelayStateSproofBuilder {
 				alice_key.extend_from_slice(&sp_io::hashing::twox_128(b"Account"));
 				alice_key.extend_from_slice(&sp_io::hashing::blake2_128(&alice.encode()));
 				alice_key.extend_from_slice(&alice.encode());
-				let alice_account = (0u32, 0u32, 1u32, 0u32, 25_000_000_000_000u128, 0u128, 0u128, 0u128);
+				let alice_account =
+					(0u32, 0u32, 1u32, 0u32, 25_000_000_000_000u128, 0u128, 0u128, 0u128);
 				insert(alice_key, alice_account.encode());
 			}
 

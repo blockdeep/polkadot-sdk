@@ -136,8 +136,12 @@ fn clear_stored_roots_only_clears_specified_publisher() {
 
 		// Manually set up storage with 2 publisher roots
 		let mut roots = BoundedBTreeMap::new();
-		roots.try_insert(publisher1, BoundedVec::try_from(vec![0u8; 32]).unwrap()).unwrap();
-		roots.try_insert(publisher2, BoundedVec::try_from(vec![1u8; 32]).unwrap()).unwrap();
+		roots
+			.try_insert(publisher1, BoundedVec::try_from(vec![0u8; 32]).unwrap())
+			.unwrap();
+		roots
+			.try_insert(publisher2, BoundedVec::try_from(vec![1u8; 32]).unwrap())
+			.unwrap();
 		PreviousPublishedDataRoots::<Test>::put(roots);
 
 		assert_eq!(PreviousPublishedDataRoots::<Test>::get().len(), 2);

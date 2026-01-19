@@ -31,13 +31,11 @@ pub trait WeightInfo {
 /// Placeholder weights (to be replaced with benchmarked values).
 impl WeightInfo for () {
 	fn register_publisher() -> Weight {
-		Weight::from_parts(20_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 3000))
+		Weight::from_parts(20_000_000, 0).saturating_add(Weight::from_parts(0, 3000))
 	}
 
 	fn force_register_publisher() -> Weight {
-		Weight::from_parts(15_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 3000))
+		Weight::from_parts(15_000_000, 0).saturating_add(Weight::from_parts(0, 3000))
 	}
 
 	fn do_cleanup_publisher(k: u32) -> Weight {
