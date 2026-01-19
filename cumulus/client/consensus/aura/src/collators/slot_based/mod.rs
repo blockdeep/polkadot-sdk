@@ -165,8 +165,10 @@ pub fn run<Block, P, BI, CIDP, Client, Backend, RClient, CHP, Proposer, CS, Spaw
 		+ Send
 		+ Sync
 		+ 'static,
-	Client::Api:
-		AuraApi<Block, P::Public> + AuraUnincludedSegmentApi<Block> + RelayParentOffsetApi<Block>,
+	Client::Api: AuraApi<Block, P::Public>
+		+ AuraUnincludedSegmentApi<Block>
+		+ RelayParentOffsetApi<Block>
+		+ cumulus_primitives_core::KeyToIncludeInRelayProofApi<Block>,
 	Backend: sc_client_api::Backend<Block> + 'static,
 	RClient: RelayChainInterface + Clone + 'static,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,

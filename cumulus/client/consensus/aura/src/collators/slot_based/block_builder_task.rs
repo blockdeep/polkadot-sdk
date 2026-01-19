@@ -127,8 +127,10 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
-	Client::Api:
-		AuraApi<Block, P::Public> + RelayParentOffsetApi<Block> + AuraUnincludedSegmentApi<Block>,
+	Client::Api: AuraApi<Block, P::Public>
+		+ RelayParentOffsetApi<Block>
+		+ AuraUnincludedSegmentApi<Block>
+		+ cumulus_primitives_core::KeyToIncludeInRelayProofApi<Block>,
 	Backend: sc_client_api::Backend<Block> + 'static,
 	RelayClient: RelayChainInterface + Clone + 'static,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
@@ -359,6 +361,10 @@ where
 				relay_parent_storage_root: *relay_parent_header.state_root(),
 				max_pov_size: *max_pov_size,
 			};
+
+			let relay_proof_request =
+				super::super::get_relay_proof_request(&*para_client, parent_hash);
+
 			let (parachain_inherent_data, other_inherent_data) = match collator
 				.create_inherent_data_with_rp_offset(
 					relay_parent,
@@ -366,7 +372,7 @@ where
 					parent_hash,
 					slot_claim.timestamp(),
 					Some(rp_data),
-					Default::default(),
+					relay_proof_request,
 					collator_peer_id,
 				)
 				.await
