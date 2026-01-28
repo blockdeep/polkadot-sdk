@@ -18,6 +18,8 @@
 
 mod mock;
 
+use std::collections::{HashMap, HashSet};
+
 use codec::Decode;
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -43,7 +45,7 @@ async fn get_static_relay_storage_keys(
 	relay_parent: PHash,
 	include_authorities: bool,
 	include_next_authorities: bool,
-) -> Option<Vec<Vec<u8>>> {
+) -> Option<HashSet<Vec<u8>>> {
 	use relay_chain::well_known_keys as relay_well_known_keys;
 
 	let ingress_channels = relay_chain_interface
@@ -103,7 +105,7 @@ async fn get_static_relay_storage_keys(
 		.ok()?
 		.unwrap_or_default();
 
-	let mut relevant_keys = vec![
+	let mut relevant_keys: HashSet<Vec<u8>> = HashSet::from([
 		relay_well_known_keys::CURRENT_BLOCK_RANDOMNESS.to_vec(),
 		relay_well_known_keys::ONE_EPOCH_AGO_RANDOMNESS.to_vec(),
 		relay_well_known_keys::TWO_EPOCHS_AGO_RANDOMNESS.to_vec(),
@@ -121,7 +123,7 @@ async fn get_static_relay_storage_keys(
 		relay_well_known_keys::upgrade_go_ahead_signal(para_id),
 		relay_well_known_keys::upgrade_restriction_signal(para_id),
 		relay_well_known_keys::para_head(para_id),
-	];
+	]);
 	relevant_keys.extend(ingress_channels.into_iter().map(|sender| {
 		relay_well_known_keys::hrmp_channels(HrmpChannelId { sender, recipient: para_id })
 	}));
@@ -130,11 +132,11 @@ async fn get_static_relay_storage_keys(
 	}));
 
 	if include_authorities {
-		relevant_keys.push(relay_well_known_keys::AUTHORITIES.to_vec());
+		relevant_keys.insert(relay_well_known_keys::AUTHORITIES.to_vec());
 	}
 
 	if include_next_authorities {
-		relevant_keys.push(relay_well_known_keys::NEXT_AUTHORITIES.to_vec());
+		relevant_keys.insert(relay_well_known_keys::NEXT_AUTHORITIES.to_vec());
 	}
 
 	Some(relevant_keys)
@@ -164,17 +166,15 @@ async fn collect_relay_storage_proof(
 
 	// Group requested keys by storage type
 	let cumulus_primitives_core::RelayProofRequest { keys } = relay_proof_request;
-	let mut child_keys: std::collections::BTreeMap<Vec<u8>, Vec<Vec<u8>>> =
-		std::collections::BTreeMap::new();
+	let mut child_keys: HashMap<Vec<u8>, HashSet<Vec<u8>>> = HashMap::new();
 
 	for key in keys {
 		match key {
-			RelayStorageKey::Top(k) =>
-				if !all_top_keys.contains(&k) {
-					all_top_keys.push(k);
-				},
+			RelayStorageKey::Top(k) => {
+				all_top_keys.insert(k);
+			},
 			RelayStorageKey::Child { storage_key, key } => {
-				child_keys.entry(storage_key).or_default().push(key);
+				child_keys.entry(storage_key).or_default().insert(key);
 			},
 		}
 	}
@@ -183,7 +183,8 @@ async fn collect_relay_storage_proof(
 	let mut all_proofs = Vec::new();
 
 	// Collect top-level storage proof
-	match relay_chain_interface.prove_read(relay_parent, &all_top_keys).await {
+	let top_keys_vec: Vec<Vec<u8>> = all_top_keys.into_iter().collect();
+	match relay_chain_interface.prove_read(relay_parent, &top_keys_vec).await {
 		Ok(top_proof) => {
 			all_proofs.push(top_proof);
 		},
@@ -201,8 +202,9 @@ async fn collect_relay_storage_proof(
 	// Collect child trie proofs
 	for (storage_key, data_keys) in child_keys {
 		let child_info = ChildInfo::new_default(&storage_key);
+		let data_keys_vec: Vec<Vec<u8>> = data_keys.into_iter().collect();
 		match relay_chain_interface
-			.prove_child_read(relay_parent, &child_info, &data_keys)
+			.prove_child_read(relay_parent, &child_info, &data_keys_vec)
 			.await
 		{
 			Ok(child_proof) => {
