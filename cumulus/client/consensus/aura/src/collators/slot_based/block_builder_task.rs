@@ -204,7 +204,7 @@ where
 
 			let Ok(relay_best_hash) = relay_client.best_block_hash().await else {
 				tracing::warn!(target: crate::LOG_TARGET, "Unable to fetch latest relay chain block hash.");
-				continue
+				continue;
 			};
 
 			let best_hash = para_client.info().best_hash;
@@ -223,7 +223,7 @@ where
 			)
 			.await
 			else {
-				continue
+				continue;
 			};
 
 			let Some(para_slot) = adjust_para_to_relay_parent_slot(
@@ -241,7 +241,7 @@ where
 				crate::collators::find_parent(relay_parent, para_id, &*para_backend, &relay_client)
 					.await
 			else {
-				continue
+				continue;
 			};
 
 			let parent_hash = parent.hash;
@@ -264,7 +264,7 @@ where
 						"Failed to determine core"
 					);
 
-					continue
+					continue;
 				},
 				Ok(Some(cores)) => {
 					tracing::debug!(
@@ -284,7 +284,7 @@ where
 						"No core scheduled"
 					);
 
-					continue
+					continue;
 				},
 			};
 
@@ -338,7 +338,7 @@ where
 						slot = ?para_slot.slot,
 						"Not building block."
 					);
-					continue
+					continue;
 				},
 			};
 
@@ -379,7 +379,7 @@ where
 			{
 				Err(err) => {
 					tracing::error!(target: crate::LOG_TARGET, ?err);
-					break
+					break;
 				},
 				Ok(x) => x,
 			};
@@ -387,7 +387,7 @@ where
 			let validation_code_hash = match code_hash_provider.code_hash_at(parent_hash) {
 				None => {
 					tracing::error!(target: crate::LOG_TARGET, ?parent_hash, "Could not fetch validation code hash");
-					break
+					break;
 				},
 				Some(v) => v,
 			};
@@ -466,7 +466,7 @@ where
 				max_pov_size: validation_data.max_pov_size,
 			}) {
 				tracing::error!(target: crate::LOG_TARGET, ?err, "Unable to send block to collation task.");
-				return
+				return;
 			}
 		}
 	}
@@ -519,7 +519,7 @@ where
 		.map(|d| d.relay_parent_header.clone())
 	else {
 		tracing::error!(target: LOG_TARGET, ?relay_best_block, "Unable to fetch best relay chain block header.");
-		return Err(())
+		return Err(());
 	};
 
 	if relay_parent_offset == 0 {
