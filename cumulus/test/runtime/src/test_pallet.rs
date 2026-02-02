@@ -158,8 +158,7 @@ impl<T: Config> cumulus_pallet_parachain_system::OnSystemEvent for Pallet<T> {
 		// Verify that Alice's account is included in the relay proof.
 		relay_state_proof
 			.read_optional_entry::<AccountInfo<Nonce, AccountData<Balance>>>(&alice_key)
-			.expect("Invalid relay chain state proof")
-			.expect("Alice's account must be present in the relay proof");
+			.expect("Invalid relay chain state proof");
 
 		frame_support::weights::Weight::zero()
 	}
